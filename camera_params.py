@@ -2,24 +2,47 @@ import cv2
 import numpy as np
 
 def build_camera_matrix(video_width: int, video_height: int):
-    # Base intrinsics calibrated at 4096 x 3072
+    # Base intrinsics calibrated at 4096 x 3072 (4:3 full sensor)
     base_w, base_h = 4096.0, 3072.0
     fx_base, fy_base = 2770.6487, 2744.9617
     cx_base, cy_base = 2048.0, 1536.0
 
-    # Scale factors matching the actual video frame dimensions
-    scale_x = video_width / base_w
-    scale_y = video_height / base_h
+    # When recording 16:9 video (e.g. 1920x1080) from the 4:3 sensor, the sensor is
+    # vertically cropped around the center and uniformly scaled by video_width / base_w.
+    scale = video_width / base_w
+    crop_offset_y = (base_h * scale - video_height) / 2.0
 
     camera_matrix = np.array([
-        [fx_base * scale_x, 0.0,              cx_base * scale_x],
-        [0.0,              fy_base * scale_y, cy_base * scale_y],
-        [0.0,              0.0,               1.0]
+        [fx_base * scale, 0.0,             cx_base * scale],
+        [0.0,             fy_base * scale, cy_base * scale - crop_offset_y],
+        [0.0,             0.0,             1.0]
     ], dtype=np.float64)
 
     # Skew is 0, assuming minimal distortion
     dist_coeffs = np.zeros((5, 1), dtype=np.float64)
     return camera_matrix, dist_coeffs
+
+
+def _solve_marker_pnp(obj_points, marker_corners, camera_matrix, dist_coeffs):
+    success, rvecs, tvecs, _ = cv2.solvePnPGeneric(
+        obj_points,
+        marker_corners,
+        camera_matrix,
+        dist_coeffs,
+        flags=cv2.SOLVEPNP_IPPE_SQUARE,
+    )
+    if not success or len(rvecs) == 0:
+        return False, None, None
+
+    # Pick the physically valid IPPE branch where marker +Z points toward the camera (Z_cam < 0)
+    for rvec, tvec in zip(rvecs, tvecs):
+        R_mat, _ = cv2.Rodrigues(rvec)
+        if R_mat[2, 2] < 0 and R_mat[1, 2] < 0:
+            return True, R_mat, tvec
+
+    R_mat, _ = cv2.Rodrigues(rvecs[0])
+    return True, R_mat, tvecs[0]
+
 
 def estimate_camera_extrinsics(image, marker_length_m=0.08):
     h, w = image.shape[:2]
@@ -27,6 +50,7 @@ def estimate_camera_extrinsics(image, marker_length_m=0.08):
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     parameters = cv2.aruco.DetectorParameters()
+    parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     corners, ids, _ = detector.detectMarkers(image)
@@ -44,19 +68,18 @@ def estimate_camera_extrinsics(image, marker_length_m=0.08):
         [-half, -half, 0]
     ], dtype=np.float64)
 
-    _, rvec, tvec = cv2.solvePnP(
-        obj_points, marker_corners, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_IPPE_SQUARE
+    success, R_cam_marker, tvec = _solve_marker_pnp(
+        obj_points, marker_corners, camera_matrix, dist_coeffs
     )
+    if not success:
+        raise RuntimeError("Failed to solve PnP for ArUco marker.")
 
-    R_cam_marker, _ = cv2.Rodrigues(rvec)
     # Camera position in the table/marker coordinate frame
     R_marker_cam = R_cam_marker.T
     t_marker_cam = -R_marker_cam @ tvec
 
     return camera_matrix, R_cam_marker, tvec, R_marker_cam, t_marker_cam
 
-import cv2
-import numpy as np
 
 def calibrate_from_video_multiframe(
     video_path,
@@ -73,7 +96,9 @@ def calibrate_from_video_multiframe(
     camera_matrix, dist_coeffs = build_camera_matrix(w, h)
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-    detector = cv2.aruco.ArucoDetector(aruco_dict, cv2.aruco.DetectorParameters())
+    parameters = cv2.aruco.DetectorParameters()
+    parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+    detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     half = marker_length_m / 2.0
     obj_points = np.array([
@@ -100,11 +125,10 @@ def calibrate_from_video_multiframe(
         idx = np.where(ids.flatten() == 0)[0][0]
         marker_corners = corners[idx]
 
-        success, rvec, tvec = cv2.solvePnP(
-            obj_points, marker_corners, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_IPPE_SQUARE
+        success, R_mat, tvec = _solve_marker_pnp(
+            obj_points, marker_corners, camera_matrix, dist_coeffs
         )
         if success:
-            R_mat, _ = cv2.Rodrigues(rvec)
             rot_matrices.append(R_mat)
             tvecs.append(tvec.flatten())
 

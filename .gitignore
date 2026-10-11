@@ -1,0 +1,11 @@
+.venv/
+*.mp4
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.DS_Store
+sam2/
+*.npz

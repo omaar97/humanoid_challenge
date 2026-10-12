@@ -7,5 +7,11 @@ __pycache__/
 *$py.class
 *.env
 .DS_Store
-sam2/
-*.npz
+lerobot_dataset/
+sam2_repo/
+last*/
+outputs/
+franka_fr3/
+.vscode/
+media/
+lerobot

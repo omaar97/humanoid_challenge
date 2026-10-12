@@ -1,0 +1,30 @@
+{
+  "name": "Humanoid Challenge (Franka FR3 + SmolVLA + MuJoCo)",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "..",
+    "args": {
+      "INSTALL_SAM2": "false",
+      "DOWNLOAD_MODEL": "false",
+      "DOWNLOAD_VIDEOS": "false",
+      "DOWNLOAD_DATASET": "false"
+    }
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "hostRequirements": {
+    "gpu": "optional"
+  },
+  "postStartCommand": "echo '=== Container Ready (Lightweight Mode) ===\nTo download optional Hugging Face assets at any time, run:\n  python3 src/download_assets.py --model     # Download fine-tuned SmolVLA checkpoint\n  python3 src/download_assets.py --videos    # Download raw, clean, overlay & eval MP4 videos\n  python3 src/download_assets.py --dataset   # Download LeRobot v3.0 dataset\n  python3 src/download_assets.py --all       # Download all of the above\n'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3"
+      }
+    }
+  }
+}
+

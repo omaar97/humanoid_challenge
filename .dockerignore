@@ -1,0 +1,16 @@
+# Exclude local virtualenvs, git metadata, caches, and large local artifacts from Docker build context
+.git/
+.venv/
+__pycache__/
+*.pyc
+outputs/
+last/
+last-*/
+sam2_repo/
+*.pt
+lerobot_dataset/
+*.mp4
+*.jpg
+*.png
+_traj_cache_*.npz
+

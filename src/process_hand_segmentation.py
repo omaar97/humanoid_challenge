@@ -10,13 +10,6 @@ import mediapipe as mp
 import numpy as np
 import torch
 
-# Allow running out-of-the-box when sam2_repo is present locally even without pip install -e
-_SAM2_REPO_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "sam2_repo"
-)
-if os.path.isdir(_SAM2_REPO_DIR) and _SAM2_REPO_DIR not in sys.path:
-    sys.path.insert(0, _SAM2_REPO_DIR)
-
 from sam2.build_sam import build_sam2_video_predictor
 from sam2.utils.misc import load_video_frames as _orig_load_video_frames
 
@@ -197,7 +190,7 @@ def inpaint_hand_region(frame, mask_bool, dilate_kernel):
     return clean_frame
 
 
-def process_video_with_delayed_hand(
+def process_video_with_hand(
     video_path,
     output_video_path="masked_clean.mp4",
     checkpoint="sam2_repo/checkpoints/sam2.1_hiera_small.pt",
@@ -403,7 +396,7 @@ def process_video_with_delayed_hand(
 
 
 if __name__ == "__main__":
-    process_video_with_delayed_hand(
+    process_video_with_hand(
         video_path="raw_push.mp4",
         output_video_path="masked_clean_push.mp4",
     )

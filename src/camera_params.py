@@ -43,44 +43,6 @@ def _solve_marker_pnp(obj_points, marker_corners, camera_matrix, dist_coeffs):
     R_mat, _ = cv2.Rodrigues(rvecs[0])
     return True, R_mat, tvecs[0]
 
-
-def estimate_camera_extrinsics(image, marker_length_m=0.08):
-    h, w = image.shape[:2]
-    camera_matrix, dist_coeffs = build_camera_matrix(w, h)
-
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-    parameters = cv2.aruco.DetectorParameters()
-    parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
-    detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
-
-    corners, ids, _ = detector.detectMarkers(image)
-    if ids is None or 0 not in ids:
-        raise ValueError("ArUco Marker ID 0 not found.")
-
-    idx = np.where(ids.flatten() == 0)[0][0]
-    marker_corners = corners[idx]
-
-    half = marker_length_m / 2.0
-    obj_points = np.array([
-        [-half,  half, 0],
-        [ half,  half, 0],
-        [ half, -half, 0],
-        [-half, -half, 0]
-    ], dtype=np.float64)
-
-    success, R_cam_marker, tvec = _solve_marker_pnp(
-        obj_points, marker_corners, camera_matrix, dist_coeffs
-    )
-    if not success:
-        raise RuntimeError("Failed to solve PnP for ArUco marker.")
-
-    # Camera position in the table/marker coordinate frame
-    R_marker_cam = R_cam_marker.T
-    t_marker_cam = -R_marker_cam @ tvec
-
-    return camera_matrix, R_cam_marker, tvec, R_marker_cam, t_marker_cam
-
-
 def calibrate_from_video_multiframe(
     video_path,
     num_frames=60,

@@ -186,7 +186,7 @@ Uses MediaPipe to prompt SAM 2 (`sam2.1_hiera_small.pt`) and replaces the human 
 python3 src/process_hand_segmentation.py --video media/raw_push.mp4 --output media/masked_clean_push.mp4
 ```
 ```bash
-python3 src/process_hand_segmentation.py --video "media/raw_pick_and_place.mp4" --output "media/masked_clean_pick_and_place.mp4"
+python3 src/process_hand_segmentation.py --video media/raw_pick_and_place.mp4 --output "media/masked_clean_pick_and_place.mp4"
 ```
 *Outputs*: `media/masked_clean_pick_and_place.mp4`, `media/masked_clean_push.mp4`.
 
@@ -204,12 +204,8 @@ python3 src/create_lerobot_dataset.py
 ```
 *Outputs*: `lerobot_dataset/`.
 
-A pipeline validation code is added but not required:
-```bash
-python3 src/validate_pipeline.py
-```
 #### Step 5: Fine-Tune SmolVLA (`lerobot/smolvla_base`) on Google Colab / Cloud GPU
-Training was conducted on an A100 GPU on Google Colab directly against the public Hugging Face dataset (`omaar97/humanoid_challenge_dataset`) following roughly these steps (saved and mounted on a Google Drive folder):
+Training was conducted on an A100 GPU on Google Colab directly against the public Hugging Face dataset (`omaar97/humanoid_challenge_dataset`) following roughly these steps (saved and mounted on a Google Drive folder, arg omitted here):
 ```bash
 !pip install "lerobot[smolvla]==0.4.4" "transformers==4.57.6" num2words
 !lerobot-train \
@@ -279,10 +275,26 @@ Mean Torque Effort ||tau||         |  N/A (Kinematic)   |      33.1 Nm       |  
 
 ---
 
-## 6. Real-Time 3D Trajectory Viewer & Low-Level Torque Controllers
+## 6. MuJoCo Simulation Environments & Controllers
 
-### 1. Interactive 3D Trajectory Viewer & Closed-Loop Executor (`mujoco_trajectory_viewer.py`)
-Visualizes full multi-step SmolVLA predicted trajectories in 3D using `mujoco.viewer.launch_passive`:
+### 1. Main MuJoCo Test Environment — Position Controller (`mujoco_main_test_env.py`)
+Primary evaluation environment implementing the Franka FR3 arm with numerical IK control. Evaluates the SmolVLA policy across the 20 standardized test scenes. It automatically resolves local `last` or `pretrained_model` checkpoint, or streams from Hugging Face Hub (`omaar97/smolvla_humanoid_challenge`).
+
+```bash
+# Evaluate policy across all 20 scenarios (headless, writes smolvla_eval_rollouts.mp4)
+python3 src/mujoco_main_test_env.py
+
+# Launch in interactive MuJoCo 3D passive viewer GUI
+python3 src/mujoco_main_test_env.py --viewer
+
+# Evaluate a specific task or instance
+python3 src/mujoco_main_test_env.py --task pick_and_place
+python3 src/mujoco_main_test_env.py --task push
+python3 src/mujoco_main_test_env.py --instance pick_01_nominal_center --viewer
+```
+
+### 2. Interactive 3D Trajectory Viewer (`mujoco_trajectory_viewer.py`)
+Visualizes full multi-step SmolVLA predicted trajectories in 3D using `mujoco.viewer.launch_passive` (or simply save them as videos if the viewer is not loading):
 
 ```bash
 # Launch interactive 3D viewer (default: loads 'last' checkpoint, Pick-and-Place prompt)
@@ -292,7 +304,7 @@ python3 src/mujoco_trajectory_viewer.py
 python3 src/mujoco_trajectory_viewer.py --prompt "push the green cup next to the pink box"
 ```
 
-### 2. Task-Space Differential Velocity Controller (`mujoco_velocity_controller_test.py`)
+### 3. Task-Space Differential Velocity Controller (`mujoco_velocity_controller_test.py`)
 Tracks predicted SmolVLA trajectories using DLS differential kinematics executed at the low level via direct motor torque commands:
 - **Control Law**: $`\tau_{\text{cmd}} = K_{v,\text{joint}} (\dot{q}_{\text{des}} - \dot{q}) + \tau_{\text{bias}}`$ where $\tau_{\text{bias}}$ provides analytical gravity and Coriolis compensation (`data.qfrc_bias`).
 
@@ -307,9 +319,9 @@ python3 src/mujoco_velocity_controller_test.py --task push
 python3 src/mujoco_velocity_controller_test.py --viewer
 ```
 
-### 3. Pure End-Effector Cartesian Impedance Controller (`mujoco_impedance_controller_test.py`)
+### 4. End-Effector Cartesian Impedance Controller (`mujoco_impedance_controller_test.py`)
 Executes task-space Cartesian impedance control at the End-Effector without nullspace control:
-- **Control Law**: $\tau_{\text{cmd}} = J^T W_{\text{task}} + \tau_{\text{bias}}$ (strictly pure End-Effector, $\tau_{\text{null}} = 0$).
+- **Control Law**: $\tau_{\text{cmd}} = J^T W_{\text{task}} + \tau_{\text{bias}}$.
 
 ```bash
 # Evaluate SmolVLA policy (Pick & Place)
@@ -320,20 +332,6 @@ python3 src/mujoco_impedance_controller_test.py --task push
 
 # Launch in interactive MuJoCo 3D viewer GUI
 python3 src/mujoco_impedance_controller_test.py --viewer
-```
-
-### 4. Standalone Pipeline & Scripted Trajectory Validation (`validate_pipeline.py`)
-Independent validation runner executing smooth scripted Cartesian polynomial trajectories without requiring any neural network policy checkpoint:
-- Verifies physics simulation, kinematics, collision geometry, and torque limits across position, velocity, and impedance modes.
-- Supports interactive passive 3D GUI via `--viewer`.
-
-```bash
-# Validate position controller via scripted trajectory
-python3 src/validate_pipeline.py --mode position
-
-# Validate torque-based velocity and impedance controllers with 3D GUI
-python3 src/validate_pipeline.py --mode velocity --viewer
-python3 src/validate_pipeline.py --mode impedance --viewer
 ```
 
 ### 5. Multi-Controller Comparison Benchmark (`compare_controllers.py`)
@@ -359,6 +357,18 @@ python3 src/compare_controllers.py --instance pick_01_nominal_center
 # (Optional) Synchronized 3-way split-screen video on a specific scenario
 python3 src/compare_controllers.py --split-screen --output-video split_comparison.mp4
 ```
+
+> [!TIP]
+> **Optional: Scripted Trajectory Validation (`validate_pipeline.py`)**:
+> A file for checking the MuJoCo physics simulation, kinematics, collision geometry, and torque limits independently without requiring SmolVLA:
+> ```bash
+> # Validate position controller via scripted trajectory
+> python3 src/validate_pipeline.py --mode position
+> 
+> # Validate torque-based velocity and impedance controllers with 3D GUI
+> python3 src/validate_pipeline.py --mode velocity --viewer
+> python3 src/validate_pipeline.py --mode impedance --viewer
+> ```
 
 ---
 

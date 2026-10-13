@@ -873,8 +873,9 @@ def load_and_verify_checkpoint(checkpoint_path: str = "last") -> str:
 def evaluate_smolvla_checkpoint(
     checkpoint_path: str = "last",
     output_video_path: str = "smolvla_eval_rollouts.mp4",
-    max_steps: int = 160,
+    max_steps: int = 165,
     device: str = "cuda",
+    task_name: Optional[str] = "all",
     instance_filter: Optional[str] = None,
     use_viewer: bool = False,
 ) -> None:
@@ -921,11 +922,22 @@ def evaluate_smolvla_checkpoint(
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore[attr-defined]
     writer = cv2.VideoWriter(output_video_path, fourcc, 30.0, (TARGET_WIDTH * 2, TARGET_HEIGHT))
 
-    for task_name in ["pick_and_place", "push"]:
-        for idx, inst in enumerate(TEST_INSTANCES[task_name]):
-            if instance_filter and inst["name"] != instance_filter and task_name != instance_filter:
-                continue
-            obs = env.reset_instance(task_name, idx)
+    tasks_to_run = (
+        ["pick_and_place", "push"]
+        if task_name in [None, "all"]
+        else [task_name] if task_name in ["pick_and_place", "push"]
+        else ["pick_and_place", "push"]
+    )
+
+    for cur_task in tasks_to_run:
+        for idx, inst in enumerate(TEST_INSTANCES[cur_task]):
+            if instance_filter is not None:
+                inst_str = str(instance_filter).strip()
+                if inst_str.isdigit() and int(inst_str) != idx:
+                    continue
+                elif not inst_str.isdigit() and inst_str not in [inst["name"], cur_task, "all"]:
+                    continue
+            obs = env.reset_instance(cur_task, idx)
             policy.reset()
             print(f"Running {inst['name']} ({inst['description']})...", flush=True)
             info: Dict[str, Any] = {}
@@ -981,10 +993,16 @@ def main() -> None:
         help="Path or identifier of fine-tuned SmolVLA checkpoint (default: 'last'). Throws an error if not found.",
     )
     parser.add_argument(
+        "--task",
+        choices=["pick_and_place", "push", "all"],
+        default="all",
+        help="Task to evaluate (pick_and_place, push, or all; default: all).",
+    )
+    parser.add_argument(
         "--instance",
         type=str,
         default=None,
-        help="Optional single instance name (e.g. 'pick_01_nominal_center') or task ('pick_and_place' / 'push') to evaluate.",
+        help="Optional test instance index (0 to 9), name (e.g. 'pick_01_nominal_center'), or None to evaluate all instances.",
     )
     parser.add_argument(
         "--output-video",
@@ -1016,6 +1034,7 @@ def main() -> None:
         output_video_path=args.output_video,
         max_steps=args.max_steps,
         device=args.device,
+        task_name=args.task,
         instance_filter=args.instance,
         use_viewer=args.viewer,
     )

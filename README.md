@@ -185,6 +185,9 @@ Uses MediaPipe to prompt SAM 2 (`sam2.1_hiera_small.pt`) and replaces the human 
 ```bash
 python3 src/process_hand_segmentation.py --video media/raw_push.mp4 --output media/masked_clean_push.mp4
 ```
+```bash
+python3 src/process_hand_segmentation.py --video "media/raw_pick_and_place.mp4" --output "media/masked_clean_pick_and_place.mp4"
+```
 *Outputs*: `media/masked_clean_pick_and_place.mp4`, `media/masked_clean_push.mp4`.
 
 #### Step 3: Trajectory Retargeting & Franka FR3 Overlay

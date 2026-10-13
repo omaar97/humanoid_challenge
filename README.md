@@ -324,7 +324,7 @@ python3 src/mujoco_velocity_controller_test.py --viewer
 
 ### 4. End-Effector Cartesian Impedance Controller (`mujoco_impedance_controller_test.py`)
 Executes task-space Cartesian impedance control at the End-Effector without nullspace control:
-- **Control Law**: $\tau_{\text{cmd}} = J^T W_{\text{task}} + \tau_{\text{bias}}$.
+- **Control Law**: $\tau_{\text{cmd}} = J^T F_{\text{task}} + \tau_{\text{bias}}$. Task-space force follows the behaviour of a spring and a damper.
 
 ```bash
 # Evaluate SmolVLA policy (Pick & Place)

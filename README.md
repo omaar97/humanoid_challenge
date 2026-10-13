@@ -220,7 +220,6 @@ Benchmarks Position, Velocity, and Impedance controllers across all 20 standardi
 ```bash
 python3 src/compare_controllers.py --checkpoint omaar97/smolvla_humanoid_challenge
 ```
-* **Overall Benchmark Success**: **Position: 19/20 (95.0%)** | **Velocity: 18/20 (90.0%)** | **Impedance: 15/20 (75.0%)**
 
 ---
 
@@ -229,6 +228,7 @@ python3 src/compare_controllers.py --checkpoint omaar97/smolvla_humanoid_challen
 > [!NOTE]
 > **Controller Tuning & Proof-of-Concept Disclaimer**:
 > The differential velocity and Cartesian impedance controllers have **not been tuned** and their control parameters were evaluated zero-shot on the first attempt without gain optimization ($K_v$, $K_p$, $D$). Consequently, this benchmark is not a fair head-to-head comparison; it simply serves as a showcase for using SmolVLA to drive low-level torque-based velocity and impedance control laws out of the box.
+> The degrees in the results show the tilt of the cup after the task is finished.
 
 ### Controller Comparison Matrix
 

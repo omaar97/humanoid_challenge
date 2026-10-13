@@ -1,0 +1,816 @@
+{
+  "scenarios": [
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_01_nominal_center",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.3,
+          "pos": [
+            0.269,
+            0.011,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.4,
+          "pos": [
+            0.273,
+            0.005,
+            0.063
+          ],
+          "err_cm": 0.19,
+          "tau_norm": 33.13
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.259,
+            0.037,
+            0.063
+          ],
+          "err_cm": 1.77,
+          "tau_norm": 31.48
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_02_front_closer",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 1.0,
+          "pos": [
+            0.254,
+            -0.002,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.255,
+            0.008,
+            0.063
+          ],
+          "err_cm": 0.18,
+          "tau_norm": 33.36
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.6,
+          "pos": [
+            0.272,
+            0.038,
+            0.063
+          ],
+          "err_cm": 1.84,
+          "tau_norm": 31.42
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_03_upper_near_wall",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.253,
+            0.032,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.261,
+            0.021,
+            0.063
+          ],
+          "err_cm": 0.21,
+          "tau_norm": 32.74
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.5,
+          "pos": [
+            0.27,
+            0.034,
+            0.063
+          ],
+          "err_cm": 1.85,
+          "tau_norm": 30.88
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_04_far_right",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.243,
+            0.019,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.356,
+            0.025,
+            0.027
+          ],
+          "err_cm": 0.11,
+          "tau_norm": 33.57
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.363,
+            0.053,
+            0.027
+          ],
+          "err_cm": 1.41,
+          "tau_norm": 33.44
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_05_near_box_right",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.246,
+            0.029,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.4,
+          "pos": [
+            0.235,
+            -0.006,
+            0.063
+          ],
+          "err_cm": 0.21,
+          "tau_norm": 33.88
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.3,
+          "pos": [
+            0.271,
+            0.01,
+            0.063
+          ],
+          "err_cm": 1.84,
+          "tau_norm": 31.46
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_06_mid_right",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.7,
+          "pos": [
+            0.274,
+            -0.004,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.5,
+          "pos": [
+            0.26,
+            -0.007,
+            0.063
+          ],
+          "err_cm": 0.17,
+          "tau_norm": 33.37
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 89.9,
+          "pos": [
+            0.321,
+            0.003,
+            0.024
+          ],
+          "err_cm": 1.7,
+          "tau_norm": 31.5
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_07_upper_right",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.3,
+          "pos": [
+            0.272,
+            0.008,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.242,
+            0.014,
+            0.063
+          ],
+          "err_cm": 0.21,
+          "tau_norm": 33.59
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.265,
+            0.03,
+            0.063
+          ],
+          "err_cm": 1.95,
+          "tau_norm": 31.22
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_08_deep_wall",
+      "controllers": {
+        "position": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.33,
+            0.072,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.33,
+            0.071,
+            0.027
+          ],
+          "err_cm": 0.13,
+          "tau_norm": 33.3
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 0.1,
+          "pos": [
+            0.317,
+            0.057,
+            0.027
+          ],
+          "err_cm": 1.61,
+          "tau_norm": 32.92
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_09_left_mid",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.2,
+          "pos": [
+            0.266,
+            0.02,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.2,
+          "pos": [
+            0.263,
+            0.003,
+            0.063
+          ],
+          "err_cm": 0.19,
+          "tau_norm": 33.31
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.256,
+            0.025,
+            0.063
+          ],
+          "err_cm": 1.77,
+          "tau_norm": 31.73
+        }
+      }
+    },
+    {
+      "task": "pick_and_place",
+      "scenario": "pick_10_center_back",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.3,
+          "pos": [
+            0.273,
+            0.028,
+            0.063
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.3,
+          "pos": [
+            0.27,
+            0.01,
+            0.063
+          ],
+          "err_cm": 0.18,
+          "tau_norm": 32.88
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.313,
+            0.018,
+            0.027
+          ],
+          "err_cm": 1.76,
+          "tau_norm": 31.44
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_01_nominal_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.334,
+            -0.006,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.8,
+          "pos": [
+            0.31,
+            -0.0,
+            0.027
+          ],
+          "err_cm": 0.12,
+          "tau_norm": 32.43
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 16.9,
+          "pos": [
+            0.302,
+            -0.018,
+            0.032
+          ],
+          "err_cm": 1.94,
+          "tau_norm": 31.7
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_02_left_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.8,
+          "pos": [
+            0.321,
+            -0.004,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.305,
+            0.013,
+            0.027
+          ],
+          "err_cm": 0.14,
+          "tau_norm": 32.71
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 11.9,
+          "pos": [
+            0.301,
+            -0.019,
+            0.031
+          ],
+          "err_cm": 1.82,
+          "tau_norm": 31.77
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_03_far_right_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.355,
+            -0.019,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.351,
+            -0.024,
+            0.027
+          ],
+          "err_cm": 0.12,
+          "tau_norm": 31.82
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 2.1,
+          "pos": [
+            0.35,
+            -0.028,
+            0.028
+          ],
+          "err_cm": 1.64,
+          "tau_norm": 31.26
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_04_deep_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.342,
+            -0.011,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.319,
+            -0.0,
+            0.027
+          ],
+          "err_cm": 0.13,
+          "tau_norm": 31.96
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.3,
+            -0.038,
+            0.027
+          ],
+          "err_cm": 1.89,
+          "tau_norm": 31.39
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_05_mid_table",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.33,
+            -0.001,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 1.1,
+          "pos": [
+            0.312,
+            -0.012,
+            0.027
+          ],
+          "err_cm": 0.11,
+          "tau_norm": 32.76
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 14.9,
+          "pos": [
+            0.302,
+            -0.02,
+            0.032
+          ],
+          "err_cm": 1.92,
+          "tau_norm": 31.85
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_06_mid_right_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.35,
+            -0.019,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.328,
+            -0.007,
+            0.027
+          ],
+          "err_cm": 0.12,
+          "tau_norm": 32.06
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 22.0,
+          "pos": [
+            0.303,
+            -0.009,
+            0.034
+          ],
+          "err_cm": 1.97,
+          "tau_norm": 31.34
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_07_inner_left",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.318,
+            0.002,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": false,
+          "tilt": 0.0,
+          "pos": [
+            0.273,
+            -0.039,
+            0.027
+          ],
+          "err_cm": 0.11,
+          "tau_norm": 32.35
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 1.4,
+          "pos": [
+            0.285,
+            -0.066,
+            0.027
+          ],
+          "err_cm": 1.73,
+          "tau_norm": 32.15
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_08_shallow_stroke",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.336,
+            -0.005,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.326,
+            -0.006,
+            0.027
+          ],
+          "err_cm": 0.12,
+          "tau_norm": 32.03
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 8.3,
+          "pos": [
+            0.322,
+            -0.013,
+            0.03
+          ],
+          "err_cm": 1.81,
+          "tau_norm": 31.53
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_09_outer_right_deep",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.356,
+            -0.022,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.1,
+          "pos": [
+            0.344,
+            -0.014,
+            0.027
+          ],
+          "err_cm": 0.11,
+          "tau_norm": 31.5
+        },
+        "impedance": {
+          "success": true,
+          "tilt": 5.9,
+          "pos": [
+            0.351,
+            -0.02,
+            0.029
+          ],
+          "err_cm": 1.71,
+          "tau_norm": 30.97
+        }
+      }
+    },
+    {
+      "task": "push",
+      "scenario": "push_10_center_front",
+      "controllers": {
+        "position": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.331,
+            -0.006,
+            0.027
+          ],
+          "err_cm": 0.0,
+          "tau_norm": 0.0
+        },
+        "velocity": {
+          "success": true,
+          "tilt": 0.0,
+          "pos": [
+            0.295,
+            -0.038,
+            0.028
+          ],
+          "err_cm": 0.17,
+          "tau_norm": 32.49
+        },
+        "impedance": {
+          "success": false,
+          "tilt": 0.1,
+          "pos": [
+            0.294,
+            -0.071,
+            0.027
+          ],
+          "err_cm": 1.86,
+          "tau_norm": 32.07
+        }
+      }
+    }
+  ],
+  "summary": {
+    "position": {
+      "pick_success": "9/10",
+      "pick_rate": 90.0,
+      "push_success": "10/10",
+      "push_rate": 100.0,
+      "total_success": "19/20",
+      "total_rate": 95.0,
+      "mean_tracking_err_cm": null,
+      "mean_tau_norm": null
+    },
+    "velocity": {
+      "pick_success": "8/10",
+      "pick_rate": 80.0,
+      "push_success": "9/10",
+      "push_rate": 90.0,
+      "total_success": "17/20",
+      "total_rate": 85.0,
+      "mean_tracking_err_cm": 0.1515,
+      "mean_tau_norm": 32.762
+    },
+    "impedance": {
+      "pick_success": "6/10",
+      "pick_rate": 60.0,
+      "push_success": "8/10",
+      "push_rate": 80.0,
+      "total_success": "14/20",
+      "total_rate": 70.0,
+      "mean_tracking_err_cm": 1.7894999999999999,
+      "mean_tau_norm": 31.676
+    }
+  }
+}

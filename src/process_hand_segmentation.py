@@ -190,12 +190,37 @@ def inpaint_hand_region(frame, mask_bool, dilate_kernel):
     return clean_frame
 
 
+def resolve_sam2_checkpoint(checkpoint_path: str = "sam2_repo/checkpoints/sam2.1_hiera_small.pt") -> str:
+    """Resolve SAM 2 checkpoint from common local paths or auto-download from Meta CDN."""
+    candidates = [
+        checkpoint_path,
+        "checkpoints/sam2.1_hiera_small.pt",
+        "sam2_repo/checkpoints/sam2.1_hiera_small.pt",
+        "/opt/sam2/checkpoints/sam2.1_hiera_small.pt",
+    ]
+    for c in candidates:
+        if c and os.path.isfile(c):
+            return c
+
+    target_dir = os.path.dirname(checkpoint_path) if os.path.dirname(checkpoint_path) else "checkpoints"
+    os.makedirs(target_dir, exist_ok=True)
+    target_file = os.path.join(target_dir, os.path.basename(checkpoint_path) or "sam2.1_hiera_small.pt")
+    if not os.path.isfile(target_file):
+        print(f"[SAM 2] Checkpoint not found locally. Downloading sam2.1_hiera_small.pt from Meta CDN ...")
+        import urllib.request
+        url = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_small.pt"
+        urllib.request.urlretrieve(url, target_file)
+        print(f"[SAM 2] Checkpoint saved to {target_file}")
+    return target_file
+
+
 def process_video_with_hand(
     video_path,
     output_video_path="masked_clean.mp4",
     checkpoint="sam2_repo/checkpoints/sam2.1_hiera_small.pt",
     model_cfg="configs/sam2.1/sam2.1_hiera_s.yaml",
 ):
+    checkpoint = resolve_sam2_checkpoint(checkpoint)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
     predictor = build_sam2_video_predictor(

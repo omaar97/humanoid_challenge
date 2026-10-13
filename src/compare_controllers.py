@@ -25,7 +25,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 if "DISPLAY" not in os.environ or not os.environ["DISPLAY"]:
     os.environ.setdefault("MUJOCO_GL", "egl")
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 import cv2
 import mujoco

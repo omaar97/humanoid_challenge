@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 if "DISPLAY" not in os.environ or not os.environ["DISPLAY"]:
     os.environ.setdefault("MUJOCO_GL", "egl")
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 import cv2
 import mujoco
@@ -761,16 +760,29 @@ class FrankaCupMuJoCoEnv:
 
 
 def resolve_pretrained_model_dir(checkpoint_path: str = "last") -> str:
-    """Resolve an outer checkpoint folder (e.g. 'last-...' or 'last') to the 'pretrained_model' folder."""
+    """Resolve a checkpoint path, local folder, Hugging Face Hub ID, or default 'last' / 'pretrained_model'."""
     import glob
 
     if not checkpoint_path:
         checkpoint_path = "last"
 
+    # 1. If checkpoint_path is a Hugging Face Hub ID (e.g. 'omaar97/smolvla_humanoid_challenge')
+    if not os.path.exists(checkpoint_path) and "/" in checkpoint_path and not checkpoint_path.startswith("."):
+        try:
+            from huggingface_hub import snapshot_download
+
+            print(f"[Hub Checkpoint] Auto-downloading SmolVLA checkpoint from Hugging Face Hub: '{checkpoint_path}'...")
+            downloaded_dir = snapshot_download(repo_id=checkpoint_path, repo_type="model")
+            return os.path.abspath(downloaded_dir)
+        except Exception as e:
+            print(f"[Warning] Could not auto-download Hub model '{checkpoint_path}': {e}")
+
+    # 2. Local candidate checks
     candidates = [
         checkpoint_path,
         os.path.join(checkpoint_path, "pretrained_model"),
         os.path.join(checkpoint_path, "last", "pretrained_model"),
+        "pretrained_model",
     ]
     for cand in candidates:
         if os.path.isfile(os.path.join(cand, "config.json")):
@@ -779,7 +791,8 @@ def resolve_pretrained_model_dir(checkpoint_path: str = "last") -> str:
         for root, _, files in os.walk(checkpoint_path):
             if "config.json" in files and "policy_preprocessor.json" in files:
                 return os.path.abspath(root)
-    # Fallback: if the user passed 'last' or an older 'last-...' timestamp folder name, auto-detect local 'last*'
+
+    # 3. Fallback: if user passed 'last' or default, search local 'last*' and 'pretrained_model' folders
     if os.path.basename(checkpoint_path).startswith("last") or checkpoint_path == "last":
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         for search_dir in (os.getcwd(), repo_root):
@@ -788,6 +801,22 @@ def resolve_pretrained_model_dir(checkpoint_path: str = "last") -> str:
                     if "config.json" in files and "model.safetensors" in files:
                         print(f"[Auto-resolved '{checkpoint_path}' -> '{root}']")
                         return os.path.abspath(root)
+            pm_candidate = os.path.join(search_dir, "pretrained_model")
+            if os.path.isfile(os.path.join(pm_candidate, "config.json")) and os.path.isfile(os.path.join(pm_candidate, "model.safetensors")):
+                print(f"[Auto-resolved '{checkpoint_path}' -> '{pm_candidate}']")
+                return os.path.abspath(pm_candidate)
+
+        # 4. Fallback: If no local checkpoint exists, auto-fetch default public model from Hugging Face Hub
+        try:
+            from huggingface_hub import snapshot_download
+
+            default_repo = "omaar97/smolvla_humanoid_challenge"
+            print(f"[Notice] No local checkpoint found at 'last' or 'pretrained_model'. Auto-downloading '{default_repo}' from Hugging Face Hub...")
+            downloaded_dir = snapshot_download(repo_id=default_repo, repo_type="model")
+            return os.path.abspath(downloaded_dir)
+        except Exception as e:
+            print(f"[Notice] Could not auto-fetch default model from Hub: {e}")
+
     return checkpoint_path
 
 
@@ -820,8 +849,6 @@ def evaluate_smolvla_checkpoint(
 ) -> None:
     """Load a fine-tuned SmolVLA checkpoint and evaluate it across the MuJoCo test instances."""
     resolved_dir = load_and_verify_checkpoint(checkpoint_path)
-    if os.path.isdir(resolved_dir):
-        os.environ.setdefault("HF_HUB_OFFLINE", "1")
     import dataclasses
     import torch
     import lerobot.policies.smolvla.processor_smolvla  # noqa: F401

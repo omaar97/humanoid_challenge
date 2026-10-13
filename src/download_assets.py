@@ -22,7 +22,7 @@ from pathlib import Path
 from huggingface_hub import hf_hub_download, snapshot_download
 
 DEFAULT_DATASET_REPO = "omaar97/humanoid_challenge_dataset"
-DEFAULT_MODEL_REPO = "omaar97/smolvla_franka_humanoid_challenge"
+DEFAULT_MODEL_REPO = "omaar97/smolvla_humanoid_challenge"
 
 MEDIA_VIDEOS = [
     "smolvla_eval_rollouts.mp4",

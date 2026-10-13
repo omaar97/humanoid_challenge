@@ -385,7 +385,7 @@ source .venv/bin/activate
 pip install "numpy==1.26.4" torch torchvision "transformers==4.57.6" \
     num2words "mujoco==3.15.0" "mediapipe==0.10.21" \
     "opencv-contrib-python==4.11.0.86" "opencv-python-headless==4.11.0.86" \
-    scipy pandas pyarrow huggingface_hub datasets diffusers accelerate \
+    scipy pandas pyarrow huggingface_hub datasets diffusers accelerate pyserial \
     einops av jsonlines draccus gymnasium torchcodec deepdiff imageio termcolor
 pip install --no-deps "rerun-sdk==0.26.2" "lerobot==0.4.4"
 

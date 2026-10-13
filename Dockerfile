@@ -55,6 +55,7 @@ RUN python3 -m pip install --upgrade pip setuptools wheel && \
         av \
         jsonlines \
         draccus \
+        pyserial \
         gymnasium \
         torchcodec \
         deepdiff \

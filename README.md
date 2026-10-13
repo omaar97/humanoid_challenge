@@ -302,6 +302,9 @@ python3 src/mujoco_trajectory_viewer.py
 
 # Launch with Push task prompt
 python3 src/mujoco_trajectory_viewer.py --prompt "push the green cup next to the pink box"
+
+# Run headless in case the viewer is refusing to load:
+env -u DISPLAY MUJOCO_GL=egl python3 src/mujoco_trajectory_viewer.py
 ```
 
 ### 3. Task-Space Differential Velocity Controller (`mujoco_velocity_controller_test.py`)

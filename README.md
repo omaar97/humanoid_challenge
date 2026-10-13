@@ -230,17 +230,7 @@ python3 src/compare_controllers.py --checkpoint omaar97/smolvla_humanoid_challen
 > **Controller Tuning & Proof-of-Concept Disclaimer**:
 > The differential velocity and Cartesian impedance controllers have **not been tuned** and their control parameters were evaluated zero-shot on the first attempt without gain optimization ($K_v$, $K_p$, $D$). Consequently, this benchmark is not a fair head-to-head comparison; it simply serves as a showcase for using SmolVLA to drive low-level torque-based velocity and impedance control laws out of the box.
 
-### Summary Performance
-
-| Metric | Position Control | Velocity Control | Impedance Control |
-| :--- | :---: | :---: | :---: |
-| **Pick & Place Success Rate** | **9 / 10 (90.0%)** | **8 / 10 (80.0%)** | **5 / 10 (50.0%)** |
-| **Push Success Rate** | **10 / 10 (100.0%)** | **10 / 10 (100.0%)** | **10 / 10 (100.0%)** |
-| **Overall Success Rate** | **19 / 20 (95.0%)** | **18 / 20 (90.0%)** | **15 / 20 (75.0%)** |
-| **Mean Tracking Error** | N/A (Pos Servo) | 0.2 cm | 1.5 cm |
-| **Mean Torque Effort $||\tau||$** | N/A (Kinematic) | 33.1 Nm | 32.1 Nm |
-
-### Per-Scenario Controller Comparison Matrix
+### Controller Comparison Matrix
 
 ```text
 ===================================================================================================

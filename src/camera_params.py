@@ -1,5 +1,22 @@
+import os
 import cv2
 import numpy as np
+
+
+def resolve_video_path(filename: str) -> str:
+    """Resolve video path preferring media/ directory, then local root and /opt/media."""
+    base = os.path.basename(filename)
+    candidates = [
+        os.path.join("media", base),
+        filename,
+        base,
+        os.path.join("/opt/media", base),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return os.path.join("media", base)
+
 
 def build_camera_matrix(video_width: int, video_height: int):
     # Base intrinsics calibrated at 4096 x 3072 (4:3 full sensor)
@@ -44,11 +61,13 @@ def _solve_marker_pnp(obj_points, marker_corners, camera_matrix, dist_coeffs):
     return True, R_mat, tvecs[0]
 
 def calibrate_from_video_multiframe(
-    video_path,
+    video_path="media/raw_pick_and_place.mp4",
     num_frames=60,
     marker_length_m=0.08,
     save_path="camera_extrinsics.npz"
 ):
+    video_path = resolve_video_path(video_path)
+    print(f"[camera_params] Calibrating from video: {video_path}")
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Unable to open video: {video_path}")
@@ -132,4 +151,4 @@ def calibrate_from_video_multiframe(
 
 if __name__ == "__main__":
     # Run once per camera setup session
-    calibrate_from_video_multiframe("raw_pick_and_place.mp4")
+    calibrate_from_video_multiframe("media/raw_pick_and_place.mp4")

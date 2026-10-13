@@ -19,6 +19,22 @@ from overlay_franka_mujoco import (
     build_hand_rot_matrix,
 )
 
+
+def resolve_video_path(filename: str) -> str:
+    """Resolve video path preferring media/ directory, then local root and /opt/media."""
+    base = os.path.basename(filename)
+    candidates = [
+        os.path.join("media", base),
+        filename,
+        base,
+        os.path.join("/opt/media", base),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return os.path.join("media", base)
+
+
 # Binary gripper states (in meters of MuJoCo fr3_finger_joint1 slide range [0.0, 0.048])
 GRIPPER_OPEN = 0.048
 GRIPPER_CLOSED = 0.0
@@ -643,7 +659,7 @@ def main() -> None:
 
     print("1. Extracting/loading trajectories and solving full EEF & joint states...", flush=True)
     traj_pick = extract_or_load_raw_trajectory(
-        "raw_pick_and_place.mp4",
+        resolve_video_path("media/raw_pick_and_place.mp4"),
         "camera_extrinsics.npz",
         min_active_frame=140,
         cache_npz_path=cache_pick,
@@ -656,7 +672,7 @@ def main() -> None:
     )
 
     traj_push = extract_or_load_raw_trajectory(
-        "raw_push.mp4",
+        resolve_video_path("media/raw_push.mp4"),
         "camera_extrinsics.npz",
         min_active_frame=0,
         cache_npz_path=cache_push,
@@ -723,26 +739,26 @@ def main() -> None:
     all_summaries: List[Dict[str, Any]] = []
     all_summaries.extend(
         process_task_into_dataset(
-            overlay_video_path="franka_overlay_pick_and_place.mp4",
+            overlay_video_path=resolve_video_path("media/franka_overlay_pick_and_place.mp4"),
             episodes=pick_episodes,
             tcp_pos_all=tcp_pos_pick,
             q_joints_all=q_joints_pick,
             task_name="pick_and_place",
             task_prompt=PROMPT_PICK_AND_PLACE,
-            out_preview_video_path="dataset_pick_and_place_25eps.mp4",
+            out_preview_video_path=os.path.join("media", "dataset_pick_and_place_25eps.mp4"),
             dataset=dataset,
             fps=30,
         )
     )
     all_summaries.extend(
         process_task_into_dataset(
-            overlay_video_path="franka_overlay_push.mp4",
+            overlay_video_path=resolve_video_path("media/franka_overlay_push.mp4"),
             episodes=push_episodes,
             tcp_pos_all=tcp_pos_push,
             q_joints_all=q_joints_push,
             task_name="push",
             task_prompt=PROMPT_PUSH,
-            out_preview_video_path="dataset_push_25eps.mp4",
+            out_preview_video_path=os.path.join("media", "dataset_push_25eps.mp4"),
             dataset=dataset,
             fps=30,
         )

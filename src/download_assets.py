@@ -24,6 +24,11 @@ from huggingface_hub import hf_hub_download, snapshot_download
 DEFAULT_DATASET_REPO = "omaar97/humanoid_challenge_dataset"
 DEFAULT_MODEL_REPO = "omaar97/smolvla_humanoid_challenge"
 
+RAW_VIDEOS = [
+    "raw_pick_and_place.mp4",
+    "raw_push.mp4",
+]
+
 MEDIA_VIDEOS = [
     "smolvla_eval_rollouts.mp4",
     "test_env_pick_and_place_demo.mp4",
@@ -47,10 +52,11 @@ def download_model(model_repo: str, output_dir: str = "pretrained_model") -> Non
     print(f"[download_assets] Model ready at '{output_dir}/'")
 
 
-def download_videos(dataset_repo: str, output_dir: str = "media") -> None:
+def download_videos(dataset_repo: str, output_dir: str = "media", video_list: list = None) -> None:
+    target_videos = video_list if video_list is not None else MEDIA_VIDEOS
     out_root = Path(output_dir)
     out_root.mkdir(parents=True, exist_ok=True)
-    for vid in MEDIA_VIDEOS:
+    for vid in target_videos:
         remote_path = f"media/{vid}"
         target_path = out_root / vid
         try:
@@ -82,22 +88,26 @@ def main() -> None:
         description="Download optional SmolVLA model, videos, and LeRobot dataset from Hugging Face."
     )
     parser.add_argument("--model", action="store_true", help="Download fine-tuned SmolVLA checkpoint.")
-    parser.add_argument("--videos", action="store_true", help="Download pipeline & evaluation MP4 videos.")
+    parser.add_argument("--videos", action="store_true", help="Download all pipeline & evaluation MP4 videos.")
+    parser.add_argument("--raw-videos", action="store_true", help="Download only raw human videos for reproduction.")
     parser.add_argument("--dataset", action="store_true", help="Download LeRobot v3.0 dataset.")
-    parser.add_argument("--all", action="store_true", help="Download model, videos, and dataset.")
+    parser.add_argument("--all", action="store_true", help="Download model, all videos, and dataset.")
     parser.add_argument("--model-repo", type=str, default=DEFAULT_MODEL_REPO)
     parser.add_argument("--dataset-repo", type=str, default=DEFAULT_DATASET_REPO)
     parser.add_argument("--model-dir", type=str, default="pretrained_model")
+    parser.add_argument("--media-dir", type=str, default="media")
     args = parser.parse_args()
 
-    if not (args.model or args.videos or args.dataset or args.all):
+    if not (args.model or args.videos or args.raw_videos or args.dataset or args.all):
         parser.print_help()
         return
 
     if args.all or args.model:
         download_model(args.model_repo, args.model_dir)
     if args.all or args.videos:
-        download_videos(args.dataset_repo, "media")
+        download_videos(args.dataset_repo, args.media_dir, MEDIA_VIDEOS)
+    elif args.raw_videos:
+        download_videos(args.dataset_repo, args.media_dir, RAW_VIDEOS)
     if args.all or args.dataset:
         download_dataset(args.dataset_repo, "lerobot_dataset")
 

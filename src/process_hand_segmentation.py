@@ -214,14 +214,33 @@ def resolve_sam2_checkpoint(checkpoint_path: str = "sam2_repo/checkpoints/sam2.1
     return target_file
 
 
+def resolve_video_path(filename: str) -> str:
+    """Resolve video path preferring media/ directory, then local root and /opt/media."""
+    base = os.path.basename(filename)
+    candidates = [
+        os.path.join("media", base),
+        filename,
+        base,
+        os.path.join("/opt/media", base),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return os.path.join("media", base)
+
+
 def process_video_with_hand(
-    video_path,
-    output_video_path="masked_clean.mp4",
+    video_path="media/raw_push.mp4",
+    output_video_path="media/masked_clean_push.mp4",
     checkpoint="sam2_repo/checkpoints/sam2.1_hiera_small.pt",
     model_cfg="configs/sam2.1/sam2.1_hiera_s.yaml",
 ):
+    video_path = resolve_video_path(video_path)
+    os.makedirs(os.path.dirname(output_video_path) or ".", exist_ok=True)
     checkpoint = resolve_sam2_checkpoint(checkpoint)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"[process_hand_segmentation] Input video: {video_path}")
+    print(f"[process_hand_segmentation] Output video: {output_video_path}")
     print(f"Using device: {device}")
     predictor = build_sam2_video_predictor(
         model_cfg,
@@ -421,9 +440,14 @@ def process_video_with_hand(
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="MediaPipe + SAM 2 hand segmentation & inpainting.")
+    parser.add_argument("--video", type=str, default="media/raw_push.mp4", help="Input raw video path.")
+    parser.add_argument("--output", type=str, default="media/masked_clean_push.mp4", help="Output inpainted video path.")
+    args = parser.parse_args()
     process_video_with_hand(
-        video_path="raw_push.mp4",
-        output_video_path="masked_clean_push.mp4",
+        video_path=args.video,
+        output_video_path=args.output,
     )
 
 

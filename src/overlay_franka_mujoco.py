@@ -11,6 +11,21 @@ import mujoco
 import numpy as np
 
 
+def resolve_video_path(filename: str) -> str:
+    """Resolve video path preferring media/ directory, then local root and /opt/media."""
+    base = os.path.basename(filename)
+    candidates = [
+        os.path.join("media", base),
+        filename,
+        base,
+        os.path.join("/opt/media", base),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return os.path.join("media", base)
+
+
 def build_fr3_xml(
     fr3_xml_path: str,
     R_wc: np.ndarray,
@@ -311,6 +326,13 @@ def process_video(
     t_cw = cal["t_cam_marker"].ravel()
     fx, fy, cx, cy = float(K[0, 0]), float(K[1, 1]), float(K[0, 2]), float(K[1, 2])
 
+    orig_video_path = resolve_video_path(orig_video_path)
+    clean_video_path = resolve_video_path(clean_video_path)
+    os.makedirs(os.path.dirname(output_video_path) or ".", exist_ok=True)
+    print(f"[overlay_franka_mujoco] Original video: {orig_video_path}")
+    print(f"[overlay_franka_mujoco] Clean video: {clean_video_path}")
+    print(f"[overlay_franka_mujoco] Output video: {output_video_path}")
+
     cap_orig = cv2.VideoCapture(orig_video_path)
     cap_clean = cv2.VideoCapture(clean_video_path)
     if not cap_orig.isOpened() or not cap_clean.isOpened():
@@ -572,18 +594,18 @@ def main() -> None:
     if args.task in ("all", "pick_and_place"):
         tasks.append(
             (
-                "raw_pick_and_place.mp4",
-                "masked_clean_pick_and_place.mp4",
-                "franka_overlay_pick_and_place.mp4",
+                "media/raw_pick_and_place.mp4",
+                "media/masked_clean_pick_and_place.mp4",
+                "media/franka_overlay_pick_and_place.mp4",
                 140,
             )
         )
     if args.task in ("all", "push"):
         tasks.append(
             (
-                "raw_push.mp4",
-                "masked_clean_push.mp4",
-                "franka_overlay_push.mp4",
+                "media/raw_push.mp4",
+                "media/masked_clean_push.mp4",
+                "media/franka_overlay_push.mp4",
                 0,
             )
         )

@@ -30,9 +30,8 @@ RAW_VIDEOS = [
 ]
 
 MEDIA_VIDEOS = [
-    "smolvla_eval_rollouts.mp4",
-    "test_env_pick_and_place_demo.mp4",
-    "test_env_push_demo.mp4",
+    "dataset_pick_and_place_25eps.mp4",
+    "dataset_push_25eps.mp4",
     "franka_overlay_pick_and_place.mp4",
     "franka_overlay_push.mp4",
     "masked_clean_pick_and_place.mp4",

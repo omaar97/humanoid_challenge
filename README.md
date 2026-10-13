@@ -51,8 +51,10 @@ Raw Human Videos (raw_pick_and_place.mp4, raw_push.mp4)
 ### Tasks & Language Prompts
 1. **Pick and Place** (`25` training episodes, `10` evaluation scenarios):
    - Prompt: `"pick the green cup and place it on top of the pink box"`
+   - Pick and place was chosen as it is a standard multi-step manipulation task.
 2. **Push** (`25` training episodes, `10` evaluation scenarios):
    - Prompt: `"push the green cup next to the pink box"`
+   - Push task was chosen as a simpler alternative to pick and place (at least it is simpler in the way both tasks are defined in the current implementation, but it could be made more complex).
 
 ---
 

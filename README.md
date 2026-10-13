@@ -286,7 +286,7 @@ python3 src/mujoco_trajectory_viewer.py --prompt "push the green cup next to the
 
 ### 2. Task-Space Differential Velocity Controller (`mujoco_velocity_controller_test.py`)
 Tracks predicted SmolVLA trajectories using DLS differential kinematics executed at the low level via direct motor torque commands:
-- **Control Law**: $\tau_{\text{cmd}} = K_{v,\text{joint}} (\dot{q}_{\text{des}} - \dot{q}) + \tau_{\text{bias}}$, where $\tau_{\text{bias}}$ provides analytical gravity and Coriolis compensation (`data.qfrc_bias`).
+- **Control Law**: $\tau_{\text{cmd}} = K_{v,\text{joint}} (\dot{q}_{\text{des}} - \dot{q}) + \tau_{\text{bias}}$ where $\tau_{\text{bias}}$ provides analytical gravity and Coriolis compensation (`data.qfrc_bias`).
 
 ```bash
 # Evaluate SmolVLA policy (Pick & Place)

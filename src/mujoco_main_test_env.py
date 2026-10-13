@@ -768,10 +768,63 @@ def resolve_pretrained_model_dir(checkpoint_path: str = "last") -> str:
     return checkpoint_path
 
 
+def sanitize_checkpoint_configs(checkpoint_dir: str) -> None:
+    """
+    Ensure config.json and tokenizer_config.json have compatible schemas
+    for LeRobot/HuggingFace loading without crashing on read-only directories.
+    """
+    import dataclasses
+
+    try:
+        from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
+    except ImportError:
+        return
+
+    cfg_path = os.path.join(checkpoint_dir, "config.json")
+    if os.path.isfile(cfg_path):
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                cfg_dict = json.load(f)
+            valid_fields = {f.name for f in dataclasses.fields(SmolVLAConfig)} | {"type"}
+            cleaned_dict = {k: v for k, v in cfg_dict.items() if k in valid_fields}
+            if len(cleaned_dict) != len(cfg_dict):
+                try:
+                    with open(cfg_path, "w", encoding="utf-8") as f:
+                        json.dump(cleaned_dict, f, indent=4)
+                except OSError as e:
+                    print(f"[Notice] Checkpoint config.json not updated (filesystem read-only): {e}")
+        except Exception as e:
+            print(f"[Notice] Skipping config.json cleanup: {e}")
+
+    local_tok_dir = os.path.join(checkpoint_dir, "tokenizer")
+    if os.path.isdir(local_tok_dir):
+        tok_cfg_path = os.path.join(local_tok_dir, "tokenizer_config.json")
+        if os.path.isfile(tok_cfg_path):
+            try:
+                with open(tok_cfg_path, "r", encoding="utf-8") as f:
+                    tok_cfg = json.load(f)
+                changed_tok = False
+                if tok_cfg.get("tokenizer_class") == "TokenizersBackend":
+                    tok_cfg["tokenizer_class"] = "PreTrainedTokenizerFast"
+                    changed_tok = True
+                if isinstance(tok_cfg.get("extra_special_tokens"), list):
+                    tok_cfg.pop("extra_special_tokens")
+                    changed_tok = True
+                if changed_tok:
+                    try:
+                        with open(tok_cfg_path, "w", encoding="utf-8") as f:
+                            json.dump(tok_cfg, f, indent=2)
+                    except OSError as e:
+                        print(f"[Notice] Checkpoint tokenizer_config.json not updated (filesystem read-only): {e}")
+            except Exception as e:
+                print(f"[Notice] Skipping tokenizer_config.json cleanup: {e}")
+
+
 def load_and_verify_checkpoint(checkpoint_path: str = "last") -> str:
     """
     Resolve checkpoint path (defaulting to 'last') and strictly verify that
     the model weights and config exist. Raises FileNotFoundError if not found.
+    Also sanitizes checkpoint configs safely for LeRobot compatibility.
     """
     if not checkpoint_path:
         checkpoint_path = "last"
@@ -784,6 +837,7 @@ def load_and_verify_checkpoint(checkpoint_path: str = "last") -> str:
             f"Expected 'model.safetensors' and 'config.json' to exist. "
             f"Please verify your checkpoint path or ensure the fine-tuned model directory is available."
         )
+    sanitize_checkpoint_configs(resolved_dir)
     return resolved_dir
 
 
@@ -799,22 +853,10 @@ def evaluate_smolvla_checkpoint(
     resolved_dir = load_and_verify_checkpoint(checkpoint_path)
     if os.path.isdir(resolved_dir):
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
-    import dataclasses
     import torch
     import lerobot.policies.smolvla.processor_smolvla  # noqa: F401
     from lerobot.policies.factory import make_pre_post_processors
-    from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
     from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
-
-    cfg_path = os.path.join(resolved_dir, "config.json")
-    if os.path.isfile(cfg_path):
-        with open(cfg_path, "r", encoding="utf-8") as f:
-            cfg_dict = json.load(f)
-        valid_fields = {f.name for f in dataclasses.fields(SmolVLAConfig)} | {"type"}
-        cleaned_dict = {k: v for k, v in cfg_dict.items() if k in valid_fields}
-        if len(cleaned_dict) != len(cfg_dict):
-            with open(cfg_path, "w", encoding="utf-8") as f:
-                json.dump(cleaned_dict, f, indent=4)
 
     print(f"Loading SmolVLA policy from: {resolved_dir} on {device}...", flush=True)
     policy = SmolVLAPolicy.from_pretrained(resolved_dir)
@@ -824,20 +866,6 @@ def evaluate_smolvla_checkpoint(
     pre_overrides: Dict[str, Any] = {"device_processor": {"device": device}}
     local_tok_dir = os.path.join(resolved_dir, "tokenizer")
     if os.path.isdir(local_tok_dir):
-        tok_cfg_path = os.path.join(local_tok_dir, "tokenizer_config.json")
-        if os.path.isfile(tok_cfg_path):
-            with open(tok_cfg_path, "r", encoding="utf-8") as f:
-                tok_cfg = json.load(f)
-            changed_tok = False
-            if tok_cfg.get("tokenizer_class") == "TokenizersBackend":
-                tok_cfg["tokenizer_class"] = "PreTrainedTokenizerFast"
-                changed_tok = True
-            if isinstance(tok_cfg.get("extra_special_tokens"), list):
-                tok_cfg.pop("extra_special_tokens")
-                changed_tok = True
-            if changed_tok:
-                with open(tok_cfg_path, "w", encoding="utf-8") as f:
-                    json.dump(tok_cfg, f, indent=2)
         pre_overrides["tokenizer_processor"] = {"tokenizer_name": local_tok_dir}
 
     preprocessor, postprocessor = make_pre_post_processors(

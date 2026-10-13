@@ -63,7 +63,6 @@ def run_single_rollout(
     task_name: str,
     instance_idx: int,
     max_steps: int = 165,
-    viewer: Any = None,
     writer: Optional[cv2.VideoWriter] = None,
     record_frames: bool = False,
 ) -> Dict[str, Any]:
@@ -83,10 +82,6 @@ def run_single_rollout(
     frames_buffer: List[np.ndarray] = []
 
     for step_i in range(max_steps):
-        if viewer is not None:
-            if not viewer.is_running():
-                break
-            viewer.sync()
 
         img_t = torch.from_numpy(obs["observation.images.camera1"]).permute(2, 0, 1).float().div(255.0)
         state_t = torch.from_numpy(obs["observation.state"]).float()
@@ -160,7 +155,6 @@ def compare_controllers(
     instance_filter: Optional[str] = None,
     max_steps: int = 165,
     device: str = "cuda",
-    use_viewer: bool = False,
     output_markdown_path: str = "controller_comparison_results.md",
     output_json_path: str = "controller_comparison_results.json",
     output_video_path: Optional[str] = None,
@@ -197,15 +191,6 @@ def compare_controllers(
         envs["velocity"] = FrankaVelocityEnv()
     if "impedance" in controllers_to_test:
         envs["impedance"] = FrankaImpedanceEnv()
-
-    viewer = None
-    if use_viewer:
-        try:
-            primary_env = list(envs.values())[0]
-            if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
-                viewer = mujoco.viewer.launch_passive(primary_env.model, primary_env.data)
-        except Exception as e:
-            print(f"Interactive viewer GUI not available ({e}). Defaulting to offscreen.", flush=True)
 
     writer = None
     if output_video_path:
@@ -253,7 +238,6 @@ def compare_controllers(
                     task_name=t_name,
                     instance_idx=idx,
                     max_steps=max_steps,
-                    viewer=viewer,
                     writer=writer if not record_split else None,
                     record_frames=record_split,
                 )
@@ -503,11 +487,6 @@ def main() -> None:
         help="Maximum control steps per episode.",
     )
     parser.add_argument(
-        "--viewer",
-        action="store_true",
-        help="Launch interactive MuJoCo 3D passive viewer GUI.",
-    )
-    parser.add_argument(
         "--output-video",
         type=str,
         default=None,
@@ -550,7 +529,6 @@ def main() -> None:
         instance_filter=args.instance,
         max_steps=args.max_steps,
         device=args.device,
-        use_viewer=args.viewer,
         output_markdown_path=args.output_markdown,
         output_json_path=args.output_json,
         output_video_path=video_path,

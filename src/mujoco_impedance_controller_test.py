@@ -48,6 +48,7 @@ from mujoco_main_test_env import (
     TARGET_HEIGHT,
     TARGET_WIDTH,
     TEST_INSTANCES,
+    FrankaTaskSpaceController,
     build_test_scene_xml,
     default_wrist_up_rot_matrix,
     load_and_verify_checkpoint,
@@ -169,7 +170,7 @@ class FrankaImpedanceEnv:
         self.R_target = default_wrist_up_rot_matrix(self.calib_path)
         self.jacp = np.zeros((3, self.model.nv))
         self.jacr = np.zeros((3, self.model.nv))
-        self.eye7 = np.eye(7)
+        self.task_space_controller = FrankaTaskSpaceController(self.model, self.data, self.calib_path)
 
         # Cartesian Impedance gains (translational & rotational stiffness + damping)
         self.kp_pos = np.array([650.0, 650.0, 650.0], dtype=np.float64)  # N/m
@@ -190,10 +191,20 @@ class FrankaImpedanceEnv:
         self.current_task_prompt = inst["task_prompt"]
 
         mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[:7] = self.q_home.copy()
-        self.data.qvel[:] = 0.0
 
         init_grip = GRIPPER_OPEN if task_name == "pick_and_place" else GRIPPER_CLOSED
+        if task_name == "pick_and_place":
+            init_tcp = np.array([0.385, -0.105, 0.048], dtype=np.float64)
+        else:
+            cx, cy = inst["cup_xy"]
+            init_tcp = np.array([cx, cy - 0.075, 0.048], dtype=np.float64)
+
+        q_init = self.task_space_controller.solve_ik(
+            init_tcp, q_init=self.task_space_controller.q_home, n_iter=80
+        )
+        self.data.qpos[:7] = q_init
+        self.data.qvel[:] = 0.0
+
         self.current_gripper_cmd = init_grip
         self.reported_gripper_cmd = init_grip
         self.close_counter = 0 if init_grip >= 0.024 else 8

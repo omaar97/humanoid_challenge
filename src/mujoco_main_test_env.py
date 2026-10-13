@@ -1,12 +1,20 @@
 import argparse
 import json
 import os
+import sys
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
-os.environ.setdefault("MUJOCO_GL", "egl")
+if "DISPLAY" not in os.environ or not os.environ["DISPLAY"]:
+    os.environ.setdefault("MUJOCO_GL", "egl")
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 import cv2
 import mujoco
+try:
+    import mujoco.viewer
+except ImportError:
+    pass
 import numpy as np
 
 # Exact constants matching lerobot_dataset (create_lerobot_dataset.py)
@@ -729,87 +737,12 @@ class FrankaCupMuJoCoEnv:
         self.renderer_overview.close()
 
 
-def generate_scripted_demo_trajectory(
-    task_name: str,
-    cup_xy: Tuple[float, float],
-) -> List[np.ndarray]:
-    """
-    Generate a clean 4D task-space trajectory [tcp_x, tcp_y, tcp_z, gripper] for any test instance
-    to verify physical grasping, lifting, placing, and pushing in the MuJoCo scene.
-    """
-    cx, cy = float(cup_xy[0]), float(cup_xy[1])
-    actions: List[np.ndarray] = []
-
-    if task_name == "pick_and_place":
-        p_start = np.array([0.385, -0.105, 0.055])
-        p_pre = np.array([cx + 0.025, cy - 0.025, 0.050])
-        p_grasp = np.array([cx, cy, 0.042])
-        p_lift = np.array([cx - 0.02, cy + 0.01, 0.145])
-        p_above_box = np.array([0.215, 0.022, 0.135])
-        p_place = np.array([0.215, 0.022, 0.092])
-        p_retreat = np.array([0.245, 0.000, 0.125])
-
-        # 1. Reach to pre-grasp (25 steps, gripper open)
-        for a in np.linspace(0, 1, 25):
-            p = (1 - a) * p_start + a * p_pre
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_OPEN], dtype=np.float32))
-        # 2. Move onto cup (15 steps, gripper open)
-        for a in np.linspace(0, 1, 15):
-            p = (1 - a) * p_pre + a * p_grasp
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_OPEN], dtype=np.float32))
-        # 3. Close gripper around the 6cm cup (12 steps, gripper closed)
-        for _ in range(12):
-            actions.append(
-                np.array([p_grasp[0], p_grasp[1], p_grasp[2], GRIPPER_CLOSED], dtype=np.float32)
-            )
-        # 4. Lift cup above table (22 steps, gripper closed)
-        for a in np.linspace(0, 1, 22):
-            p = (1 - a) * p_grasp + a * p_lift
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_CLOSED], dtype=np.float32))
-        # 5. Transport over the pink box (25 steps, gripper closed)
-        for a in np.linspace(0, 1, 25):
-            p = (1 - a) * p_lift + a * p_above_box
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_CLOSED], dtype=np.float32))
-        # 6. Lower onto top of 5cm pink box (15 steps, gripper closed)
-        for a in np.linspace(0, 1, 15):
-            p = (1 - a) * p_above_box + a * p_place
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_CLOSED], dtype=np.float32))
-        # 7. Open gripper to release cup on pink box (12 steps, gripper open)
-        for _ in range(12):
-            actions.append(
-                np.array([p_place[0], p_place[1], p_place[2], GRIPPER_OPEN], dtype=np.float32)
-            )
-        # 8. Retreat slightly while keeping cup on box (10 steps, gripper open)
-        for a in np.linspace(0, 1, 10):
-            p = (1 - a) * p_place + a * p_retreat
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_OPEN], dtype=np.float32))
-    else:
-        # Push task: reach with closed gripper and push cup next to the right side of the pink box
-        p_start = np.array([cx + 0.015, cy - 0.075, 0.044])
-        p_contact = np.array([cx + 0.005, cy - 0.042, 0.042])
-        # Push target places cup at x ~ 0.315, y ~ +0.015 (right next to pink box right face at x=0.283)
-        p_push_end = np.array([0.318, -0.025, 0.042])
-
-        for a in np.linspace(0, 1, 20):
-            p = (1 - a) * p_start + a * p_contact
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_CLOSED], dtype=np.float32))
-        for a in np.linspace(0, 1, 45):
-            p = (1 - a) * p_contact + a * p_push_end
-            actions.append(np.array([p[0], p[1], p[2], GRIPPER_CLOSED], dtype=np.float32))
-        for _ in range(10):
-            actions.append(
-                np.array(
-                    [p_push_end[0], p_push_end[1], p_push_end[2], GRIPPER_CLOSED],
-                    dtype=np.float32,
-                )
-            )
-
-    return actions
-
-
-def resolve_pretrained_model_dir(checkpoint_path: str) -> str:
+def resolve_pretrained_model_dir(checkpoint_path: str = "last") -> str:
     """Resolve an outer checkpoint folder (e.g. 'last-...' or 'last') to the 'pretrained_model' folder."""
     import glob
+
+    if not checkpoint_path:
+        checkpoint_path = "last"
 
     candidates = [
         checkpoint_path,
@@ -824,7 +757,7 @@ def resolve_pretrained_model_dir(checkpoint_path: str) -> str:
             if "config.json" in files and "policy_preprocessor.json" in files:
                 return os.path.abspath(root)
     # Fallback: if the user passed 'last' or an older 'last-...' timestamp folder name, auto-detect local 'last*'
-    if os.path.basename(checkpoint_path).startswith("last"):
+    if os.path.basename(checkpoint_path).startswith("last") or checkpoint_path == "last":
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         for search_dir in (os.getcwd(), repo_root):
             for match in sorted(glob.glob(os.path.join(search_dir, "last*")), reverse=True):
@@ -835,15 +768,35 @@ def resolve_pretrained_model_dir(checkpoint_path: str) -> str:
     return checkpoint_path
 
 
+def load_and_verify_checkpoint(checkpoint_path: str = "last") -> str:
+    """
+    Resolve checkpoint path (defaulting to 'last') and strictly verify that
+    the model weights and config exist. Raises FileNotFoundError if not found.
+    """
+    if not checkpoint_path:
+        checkpoint_path = "last"
+    resolved_dir = resolve_pretrained_model_dir(checkpoint_path)
+    weights_file = os.path.join(resolved_dir, "model.safetensors")
+    config_file = os.path.join(resolved_dir, "config.json")
+    if not (os.path.isdir(resolved_dir) and os.path.isfile(weights_file) and os.path.isfile(config_file)):
+        raise FileNotFoundError(
+            f"Cannot find valid SmolVLA checkpoint at '{checkpoint_path}' (resolved to '{resolved_dir}'). "
+            f"Expected 'model.safetensors' and 'config.json' to exist. "
+            f"Please verify your checkpoint path or ensure the fine-tuned model directory is available."
+        )
+    return resolved_dir
+
+
 def evaluate_smolvla_checkpoint(
-    checkpoint_path: str,
+    checkpoint_path: str = "last",
     output_video_path: str = "smolvla_eval_rollouts.mp4",
     max_steps: int = 160,
     device: str = "cuda",
     instance_filter: Optional[str] = None,
+    use_viewer: bool = False,
 ) -> None:
     """Load a fine-tuned SmolVLA checkpoint and evaluate it across the MuJoCo test instances."""
-    resolved_dir = resolve_pretrained_model_dir(checkpoint_path)
+    resolved_dir = load_and_verify_checkpoint(checkpoint_path)
     if os.path.isdir(resolved_dir):
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
     import dataclasses
@@ -862,14 +815,6 @@ def evaluate_smolvla_checkpoint(
         if len(cleaned_dict) != len(cfg_dict):
             with open(cfg_path, "w", encoding="utf-8") as f:
                 json.dump(cleaned_dict, f, indent=4)
-
-    if os.path.isdir(resolved_dir) and not os.path.isfile(
-        os.path.join(resolved_dir, "model.safetensors")
-    ):
-        raise FileNotFoundError(
-            f"Found checkpoint config at '{resolved_dir}', but 'model.safetensors' is missing! "
-            f"Please copy 'model.safetensors' into '{resolved_dir}/model.safetensors'."
-        )
 
     print(f"Loading SmolVLA policy from: {resolved_dir} on {device}...", flush=True)
     policy = SmolVLAPolicy.from_pretrained(resolved_dir)
@@ -902,6 +847,22 @@ def evaluate_smolvla_checkpoint(
     )
 
     env = FrankaCupMuJoCoEnv()
+
+    # Launch interactive MuJoCo passive GUI viewer if requested
+    viewer = None
+    has_gui = False
+    if use_viewer:
+        try:
+            if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
+                viewer = mujoco.viewer.launch_passive(env.model, env.data)
+                has_gui = viewer.is_running()
+                if has_gui:
+                    print("Interactive MuJoCo 3D viewer opened successfully!", flush=True)
+            else:
+                print("DISPLAY environment variable not set; defaulting to offscreen video.", flush=True)
+        except Exception as e:
+            print(f"Interactive viewer GUI not available ({e}). Defaulting to video.", flush=True)
+
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore[attr-defined]
     writer = cv2.VideoWriter(output_video_path, fourcc, 30.0, (TARGET_WIDTH * 2, TARGET_HEIGHT))
 
@@ -914,6 +875,12 @@ def evaluate_smolvla_checkpoint(
             print(f"Running {inst['name']} ({inst['description']})...", flush=True)
             info: Dict[str, Any] = {}
             for step_i in range(max_steps):
+                if viewer is not None:
+                    if not viewer.is_running():
+                        print("Viewer window closed by user. Terminating evaluation.", flush=True)
+                        break
+                    viewer.sync()
+
                 img_t = (
                     torch.from_numpy(obs["observation.images.camera1"])
                     .permute(2, 0, 1)
@@ -937,84 +904,15 @@ def evaluate_smolvla_checkpoint(
                 writer.write(env.render_dual_view_bgr(label))
 
             print(
-                f"  Result: cup_pos={info['cup_pos'].round(3).tolist()} | "
-                f"tilt={info['cup_tilt_deg']:.1f}deg | "
-                f"on_pink_box={info['on_pink_box']} | next_to_pink_box={info['next_to_pink_box']}",
+                f"  Result: cup_pos={info.get('cup_pos', [0,0,0]).round(3).tolist()} | "
+                f"tilt={info.get('cup_tilt_deg', 0.0):.1f}deg | "
+                f"on_pink_box={info.get('on_pink_box', False)} | next_to_pink_box={info.get('next_to_pink_box', False)}",
                 flush=True,
             )
 
     writer.release()
     env.close()
     print(f"Saved SmolVLA evaluation video to: {output_video_path}", flush=True)
-
-
-def run_scene_verification_and_demos() -> None:
-    """
-    1. Verify that all 7 joint limits match unmodified franka_fr3/fr3.xml.
-    2. Render a visual gallery of all 10 test instances (In-Person Camera vs. Overall MuJoCo Scene).
-    3. Run full physics rollouts across test instances and save demo videos.
-    """
-    env = FrankaCupMuJoCoEnv()
-
-    print("=== 1. Joint Limits Verification (Unmodified franka_fr3/fr3.xml) ===")
-    for j in range(7):
-        jname = mujoco.mj_id2name(env.model, mujoco.mjtObj.mjOBJ_JOINT, j)
-        jmin, jmax = env.model.jnt_range[j]
-        q_h = env.controller.q_home[j]
-        print(
-            f"  {jname}: range=[{jmin:.4f}, {jmax:.4f}] rad | q_home={q_h:.3f} rad "
-            f"(margin={min(q_h - jmin, jmax - q_h):.3f} rad)"
-        )
-
-    # Render test instances gallery
-    gallery_rows: List[np.ndarray] = []
-    for task_name in ["pick_and_place", "push"]:
-        for idx, inst in enumerate(TEST_INSTANCES[task_name]):
-            env.reset_instance(task_name, idx)
-            dual_bgr = env.render_dual_view_bgr(
-                f"{inst['name']}: cup_xy={inst['cup_xy']}"
-            )
-            gallery_rows.append(dual_bgr)
-
-    gallery_img = np.vstack(gallery_rows)
-    cv2.imwrite("mujoco_test_instances_gallery.jpg", gallery_img)
-    print(
-        f"Saved test instances visual gallery to: mujoco_test_instances_gallery.jpg ({gallery_img.shape})"
-    )
-
-    # Also save a high-res comparison of Instance 0 (Full 1920x1080 In-Person, 640x480 SmolVLA Input, and 3rd-Person Overview)
-    env.reset_instance("pick_and_place", 0)
-    full_in_person_bgr = cv2.cvtColor(env.render_in_person_full(), cv2.COLOR_RGB2BGR)
-    cv2.imwrite("mujoco_in_person_full_1080p.jpg", full_in_person_bgr)
-    cv2.imwrite("mujoco_dual_view_preview.jpg", gallery_rows[0])
-
-    # Run physics verification demo videos on multiple test instances per task
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore[attr-defined]
-    for task_name, out_vid in [
-        ("pick_and_place", "test_env_pick_and_place_demo.mp4"),
-        ("push", "test_env_push_demo.mp4"),
-    ]:
-        writer = cv2.VideoWriter(
-            out_vid, fourcc, 30.0, (TARGET_WIDTH * 2, TARGET_HEIGHT)
-        )
-        for idx in range(3):
-            inst = TEST_INSTANCES[task_name][idx]
-            env.reset_instance(task_name, idx)
-            actions = generate_scripted_demo_trajectory(task_name, inst["cup_xy"])
-            info: Dict[str, Any] = {}
-            for step_i, act in enumerate(actions):
-                _, info = env.step(act)
-                label = f"{inst['name']} | cup={inst['cup_xy']} | step {step_i+1}/{len(actions)}"
-                writer.write(env.render_dual_view_bgr(label))
-            print(
-                f"Physics rollout [{inst['name']}]: final cup_pos={info['cup_pos'].round(3).tolist()} | "
-                f"on_pink_box={info['on_pink_box']} | next_to_pink_box={info['next_to_pink_box']}",
-                flush=True,
-            )
-        writer.release()
-        print(f"Saved physics demo video: {out_vid}", flush=True)
-
-    env.close()
 
 
 def main() -> None:
@@ -1024,14 +922,14 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default=None,
-        help="Path or HuggingFace repo_id of fine-tuned SmolVLA checkpoint to evaluate.",
+        default="last",
+        help="Path or identifier of fine-tuned SmolVLA checkpoint (default: 'last'). Throws an error if not found.",
     )
     parser.add_argument(
         "--instance",
         type=str,
         default=None,
-        help="Optional single instance name (e.g. 'pick_place_center') or task ('pick_and_place' / 'push') to evaluate.",
+        help="Optional single instance name (e.g. 'pick_01_nominal_center') or task ('pick_and_place' / 'push') to evaluate.",
     )
     parser.add_argument(
         "--output-video",
@@ -1046,6 +944,11 @@ def main() -> None:
         help="Max steps per evaluation episode.",
     )
     parser.add_argument(
+        "--viewer",
+        action="store_true",
+        help="Launch interactive MuJoCo 3D passive viewer GUI.",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cuda",
@@ -1053,16 +956,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.checkpoint:
-        evaluate_smolvla_checkpoint(
-            checkpoint_path=args.checkpoint,
-            output_video_path=args.output_video,
-            max_steps=args.max_steps,
-            device=args.device,
-            instance_filter=args.instance,
-        )
-    else:
-        run_scene_verification_and_demos()
+    evaluate_smolvla_checkpoint(
+        checkpoint_path=args.checkpoint,
+        output_video_path=args.output_video,
+        max_steps=args.max_steps,
+        device=args.device,
+        instance_filter=args.instance,
+        use_viewer=args.viewer,
+    )
 
 
 if __name__ == "__main__":

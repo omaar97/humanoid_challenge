@@ -39,7 +39,7 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from mujoco_test_env import (
+from mujoco_main_test_env import (
     CROP_X_START,
     PROMPT_PICK_AND_PLACE,
     PROMPT_PUSH,
@@ -625,8 +625,8 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default=None,
-        help="Path or HF repo_id of fine-tuned SmolVLA checkpoint (auto-detects local checkpoint if omitted).",
+        default="last",
+        help="Path or identifier of fine-tuned SmolVLA checkpoint (default: 'last'). Throws an error if not found.",
     )
     parser.add_argument(
         "--task",
